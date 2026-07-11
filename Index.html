@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTEX TOOLS</title>
+<style>
+  :root{
+    --bg:#050810;
+    --panel:#0a1220;
+    --panel-2:#0d1a2b;
+    --cyan:#3ee9ff;
+    --green:#39ff9d;
+    --green-dim:#1f8f5c;
+    --text:#cfe9ff;
+    --text-dim:#6a86a8;
+    --border:#123049;
+    --danger:#ff4d6d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    font-family:'Courier New', ui-monospace, monospace;
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+    transition:background 0.3s;
+  }
+  .hidden{ display:none !important; }
+  button{ font-family:inherit; cursor:pointer; }
+  input{ font-family:inherit; }
+
+  /* ---------- ambient matrix ---------- */
+  #matrix{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+    background:radial-gradient(ellipse at top, rgba(62,233,255,0.07), transparent 60%), var(--bg); }
+  #matrix .col{ position:absolute; top:-20%; font-size:11px; line-height:1.4; color:rgba(62,233,255,0.10); white-space:pre; animation:fall linear infinite; }
+  @keyframes fall{ from{ transform:translateY(0);} to{ transform:translateY(140vh);} }
+
+  .app{ position:relative; z-index:1; max-width:480px; margin:0 auto; min-height:100vh; padding:0 0 60px; }
+
+  /* ============ SCREEN 0 : KEY / LOGIN ============ */
+  #screen-key{ position:fixed; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #key-bg-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; opacity:0.35; }
+  .key-overlay-dark{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(3,7,14,0.25),rgba(3,7,14,0.6)); z-index:1; }
+  .key-card{ position:relative; z-index:2; width:88%; max-width:340px; padding:30px 24px; border-radius:18px;
+    background:rgba(6,12,22,0.75); border:1px solid rgba(62,233,255,0.35);
+    box-shadow:0 0 40px rgba(62,233,255,0.15), inset 0 0 30px rgba(62,233,255,0.03);
+    text-align:center; backdrop-filter:blur(6px); }
+  .key-logo-slot{ width:74px; height:74px; margin:0 auto 16px; border-radius:18px; position:relative;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    background:linear-gradient(145deg,#0d1f33,#081422); border:1px solid rgba(62,233,255,0.35);
+    box-shadow:0 0 24px rgba(62,233,255,0.15); }
+  .key-logo-slot img{ width:100%; height:100%; object-fit:cover; display:none; }
+  .key-logo{ font-size:26px; font-weight:800; letter-spacing:3px; color:#eafcff; margin-bottom:2px;
+    text-shadow:0 0 18px rgba(62,233,255,0.6); }
+  .key-logo span{ color:var(--cyan); }
+  .key-sub{ font-size:10.5px; letter-spacing:3px; color:var(--text-dim); margin-bottom:26px; }
+  .key-field{ position:relative; margin-bottom:14px; }
+  .key-field input{
+    width:100%; padding:13px 42px 13px 14px; border-radius:10px;
+    background:#081120; border:1px solid #16324a; color:#eafcff; font-size:14px; letter-spacing:2px;
+    outline:none; transition:border-color 0.2s;
+  }
+  .key-field input:focus{ border-color:var(--cyan); }
+  .key-eye{ position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--text-dim); font-size:16px; padding:6px; }
+  .key-error{ font-size:11px; color:var(--danger); margin-bottom:10px; min-height:14px; }
+  .key-submit{
+    width:100%; padding:14px; border-radius:10px; border:1px solid var(--green-dim);
+    background:linear-gradient(180deg,#123a2c,#0a2419); color:var(--green);
+    font-size:13.5px; font-weight:700; letter-spacing:2px;
+  }
+  .key-submit:active{ transform:scale(0.98); }
+  .key-hint{ margin-top:16px; font-size:10px; color:#2c4a66; letter-spacing:0.5px; }
+  .shake{ animation:shake 0.35s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+  /* ============ SCREEN 1 : LOADING (FULLSCREEN VIDEO) ============ */
+  #screen-loading{ position:fixed; inset:0; z-index:6; background:#000; overflow:hidden; }
+  #loading-bg-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.9; }
+  .loading-dark{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.28)); }
+  .loading-topbtn{
+    position:absolute; top:22px; right:20px; z-index:3;
+    padding:10px 16px; border-radius:9px; border:1px solid var(--green-dim);
+    background:rgba(10,36,25,0.85); color:var(--green); font-size:11.5px; font-weight:700; letter-spacing:1px;
+    opacity:0; pointer-events:none; transition:opacity 0.4s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .loading-topbtn.show{ opacity:1; pointer-events:auto; animation:pulseBtn 1.4s ease-in-out infinite; }
+  @keyframes pulseBtn{ 0%,100%{ box-shadow:0 0 0 rgba(57,255,157,0.4);} 50%{ box-shadow:0 0 16px rgba(57,255,157,0.5);} }
+  .loading-mutebtn{ position:absolute; top:22px; left:20px; z-index:3;
+    width:36px; height:36px; border-radius:9px; border:1px solid rgba(62,233,255,0.4);
+    background:rgba(6,12,22,0.7); color:#eafcff; display:flex; align-items:center; justify-content:center; }
+  .loading-ascii{
+    position:absolute; left:50%; bottom:70px; transform:translateX(-50%); z-index:3;
+    width:88%; max-width:360px; font-family:'Courier New',monospace; color:#eafcff;
+  }
+  .ascii-title{ text-align:center; font-size:17px; font-weight:800; letter-spacing:4px; margin-bottom:6px;
+    text-shadow:0 0 14px rgba(62,233,255,0.7); }
+  .loading-bar-track{ width:100%; height:10px; border-radius:6px; background:rgba(255,255,255,0.08);
+    border:1px solid rgba(62,233,255,0.25); overflow:hidden; margin:6px 0 4px; }
+  .loading-bar-fill{ height:100%; width:0%; border-radius:6px;
+    background:linear-gradient(90deg,var(--cyan),var(--green));
+    box-shadow:0 0 10px rgba(62,233,255,0.6);
+    transition:width 0.2s linear; }
+  .ascii-percent{ text-align:right; font-size:14px; font-weight:700; color:var(--green); margin-top:4px; letter-spacing:1px; }
+  .loading-status{ text-align:center; margin-top:14px; font-size:11px; color:var(--text-dim); letter-spacing:1px; min-height:16px; }
+  .loading-status.ready{ color:var(--green); font-weight:700; }
+
+  /* ============ SHIZUKU PERMISSION DIALOG ============ */
+  #screen-permission{ position:fixed; inset:0; z-index:20; background:rgba(2,5,10,0.82);
+    display:flex; align-items:center; justify-content:center; padding:20px; }
+  .perm-dialog{
+    width:100%; max-width:320px; border-radius:16px; background:#0d1522; border:1px solid #1c3550;
+    padding:22px 20px; box-shadow:0 10px 40px rgba(0,0,0,0.6);
+    animation:popIn 0.28s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes popIn{ from{ opacity:0; transform:scale(0.85);} to{ opacity:1; transform:scale(1);} }
+  .perm-app-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .perm-app-icon{ width:38px; height:38px; border-radius:10px; background:linear-gradient(145deg,#123a2c,#081422);
+    display:flex; align-items:center; justify-content:center; font-size:18px; border:1px solid rgba(57,255,157,0.35); }
+  .perm-app-name{ font-size:13px; font-weight:700; color:#eafcff; }
+  .perm-app-sub{ font-size:10px; color:var(--text-dim); }
+  .perm-title{ font-size:14px; font-weight:700; color:#eafcff; margin-bottom:8px; line-height:1.4; }
+  .perm-desc{ font-size:11.5px; color:var(--text-dim); line-height:1.6; margin-bottom:18px; }
+  .perm-desc b{ color:var(--cyan); }
+  .perm-actions{ display:flex; gap:10px; }
+  .perm-btn{ flex:1; padding:11px; border-radius:9px; font-size:12px; font-weight:700; border:1px solid #1c3550; letter-spacing:0.5px; }
+  .perm-deny{ background:transparent; color:var(--text-dim); }
+  .perm-allow{ background:linear-gradient(180deg,#123a2c,#0a2419); border-color:var(--green-dim); color:var(--green); }
+
+  /* ============ LOADING OVERLAY (shared, small) ============ */
+  #overlay-mini{ position:fixed; inset:0; z-index:55; background:rgba(3,7,14,0.9);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+  .spinner{ width:52px; height:52px; border-radius:50%; border:3px solid rgba(62,233,255,0.15); border-top-color:var(--cyan); animation:spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .mini-text{ color:var(--cyan); font-size:12.5px; letter-spacing:1.5px; text-align:center; }
+
+  /* ============ MAIN SCREEN ============ */
+  #screen-main{ padding-top:4px; }
+  .header{ padding:18px 16px 14px; text-align:center; position:relative; }
+  .header .doc-icon{ position:absolute; top:16px; left:16px; font-size:20px; z-index:2; }
+  .header .music-btn{ position:absolute; top:14px; right:56px; background:none; border:1px solid var(--border);
+    color:var(--cyan); font-size:16px; border-radius:8px; padding:6px 9px; z-index:13; }
+  .header .settings-btn{ position:absolute; top:14px; right:16px; background:none; border:1px solid var(--border);
+    color:var(--cyan); font-size:16px; border-radius:8px; padding:6px 9px; z-index:13; }
+  .brand{ font-size:22px; font-weight:800; letter-spacing:2px; color:#f2fbff; }
+  .brand span{ color:var(--cyan); }
+  .subtitle{ font-size:10.5px; letter-spacing:3px; color:var(--text-dim); margin-top:4px; }
+  .divider{ border:none; border-top:1px dashed #16324a; margin:14px 0; }
+
+  /* theme panel */
+  #theme-panel{ position:absolute; top:52px; right:16px; z-index:14; background:#0a1220; border:1px solid var(--border);
+    border-radius:12px; padding:12px; display:flex; flex-wrap:wrap; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,0.5); width:168px; justify-content:center; }
+  .theme-swatch{ width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0; }
+  .theme-swatch.active{ border-color:#fff; }
+
+  /* update banner */
+  .update-banner{ margin:0 16px 14px; padding:12px 14px; border-radius:10px; background:rgba(62,233,255,0.08);
+    border:1px solid rgba(62,233,255,0.3); display:flex; align-items:flex-start; gap:8px; font-size:11.5px; color:#dff5ff; line-height:1.5; }
+  .update-banner button{ background:none; border:none; color:var(--text-dim); font-size:15px; margin-left:auto; }
+
+  .status-box{ margin:0 16px 18px; padding:20px 16px; border:1px dashed var(--green-dim); border-radius:12px; text-align:center; background:rgba(20,60,45,0.08); }
+  .status-pill{ display:inline-flex; align-items:center; gap:8px; border:1px solid var(--green-dim); border-radius:8px; padding:9px 18px; color:var(--green); font-size:13px; font-weight:700; margin-bottom:10px; }
+  .status-line{ font-size:11px; color:var(--green); letter-spacing:1px; }
+
+  .section-label{ display:flex; align-items:center; gap:8px; margin:20px 16px 10px; font-size:13px; font-weight:700; letter-spacing:1px; }
+  .section-label .bar{ width:3px; height:16px; border-radius:2px; }
+  .bar-cyan{ background:var(--cyan); }
+  .bar-green{ background:var(--green); }
+  .label-cyan{ color:var(--cyan); }
+  .label-green{ color:var(--green); }
+
+  .feature-list{ padding:0 16px; display:flex; flex-direction:column; gap:12px; }
+  .feature{ display:flex; align-items:center; justify-content:space-between; padding:16px; gap:10px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--border); border-radius:14px; }
+  .feature-info{ flex:1; }
+  .feature-name{ font-size:13.5px; font-weight:700; color:#eafcff; margin-bottom:4px; }
+  .feature-desc{ font-size:10.5px; color:var(--text-dim); line-height:1.5; }
+  .switch{ width:46px; height:26px; border-radius:20px; flex-shrink:0; background:#152538; border:1px solid #1d3b56; position:relative; transition:background 0.25s, border-color 0.25s; }
+  .switch .knob{ position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#8ea6c0; transition:left 0.25s, background 0.25s; }
+  .switch.on{ background:rgba(57,255,157,0.15); border-color:var(--green-dim); }
+  .switch.on .knob{ left:22px; background:var(--green); box-shadow:0 0 8px rgba(57,255,157,0.6); }
+
+  .console{ margin:20px 16px 0; padding:14px; border-radius:10px; background:#050c14; border:1px solid #10283c;
+    font-size:10.5px; color:#4fd1a5; line-height:1.8; max-height:130px; overflow-y:auto; }
+  .console .sys{ color:#5c7fa0; }
+  .console .ok{ color:#39ff9d; }
+  .footer-tag{ text-align:center; margin-top:16px; font-size:10px; color:#2c4a66; letter-spacing:1px; padding-bottom:10px; }
+
+  /* toast */
+  #toast-wrap{ position:fixed; left:0; right:0; bottom:18px; z-index:60; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
+  .toast{ max-width:340px; width:calc(100% - 40px); background:#081521; border:1px solid rgba(57,255,157,0.35); border-radius:10px;
+    padding:12px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 6px 24px rgba(0,0,0,0.5); animation:toastIn 0.25s ease-out; font-size:12px; }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+  .toast .mini-spinner{ width:16px; height:16px; border-radius:50%; border:2px solid rgba(62,233,255,0.2); border-top-color:var(--cyan); animation:spin 0.7s linear infinite; flex-shrink:0; }
+  .toast .check{ color:var(--green); font-size:15px; flex-shrink:0; }
+  .toast .msg{ color:#dff5ff; }
+  .toast .msg b{ color:var(--green); }
+</style>
+</head>
+<body data-theme="neon">
+
+<div id="matrix"></div>
+
+<!-- ================= SCREEN 0: KEY / LOGIN ================= -->
+<div id="screen-key">
+  <video id="key-bg-video" autoplay muted loop playsinline preload="auto">
+    <source src="https://files.catbox.moe/hgcoac.mp4" type="video/mp4">
+  </video>
+  <div class="key-overlay-dark"></div>
+  <div class="key-card">
+    <div class="key-logo-slot" id="key-logo-slot">
+      <img id="key-logo-img" src="" alt="Logo" onload="this.style.display='block'; document.getElementById('key-logo-fallback').style.display='none';">
+      <div id="key-logo-fallback" style="color:#3ee9ff;"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M8 9l4 8 4-8"/></svg></div>
+    </div>
+    <div class="key-logo">VORTEX <span>TOOLS</span></div>
+    <div class="key-sub">MASUKKAN KEY UNTUK MELANJUTKAN</div>
+    <div class="key-field">
+      <input type="password" id="key-input" placeholder="Masukkan key..." autocomplete="off">
+      <button class="key-eye" id="key-eye-btn" type="button"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    </div>
+    <div class="key-error" id="key-error"></div>
+    <button class="key-submit" id="key-submit">MASUK</button>
+    <div class="key-hint">Belum punya key? Hubungi admin penyedia key.</div>
+  </div>
+</div>
+
+<!-- ================= SCREEN 1: LOADING (VIDEO FULLSCREEN) ================= -->
+<div id="screen-loading" class="hidden">
+  <video id="loading-bg-video" autoplay muted playsinline preload="auto">
+    <source src="https://files.catbox.moe/hgcoac.mp4" type="video/mp4">
+  </video>
+  <div class="loading-dark"></div>
+  <button class="loading-topbtn" id="btn-continue">LANJUTKAN KE MENU <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>
+  <button class="loading-mutebtn" id="btn-loading-mute" title="Nyala/Matikan suara video">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="loading-mute-icon"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+  </button>
+  <div class="loading-ascii">
+    <div class="ascii-title">VORTEX TOOLS</div>
+    <div class="loading-bar-track"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+    <div class="ascii-percent" id="ascii-percent">0%</div>
+    <div class="loading-status" id="loading-status">Memuat komponen engine...</div>
+  </div>
+</div>
+
+<!-- ================= SHIZUKU PERMISSION DIALOG ================= -->
+<div id="screen-permission" class="hidden">
+  <div class="perm-dialog">
+    <div class="perm-app-row">
+      <div class="perm-app-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></div>
+      <div>
+        <div class="perm-app-name">VORTEX TOOLS</div>
+        <div class="perm-app-sub">Izin sistem diperlukan</div>
+      </div>
+    </div>
+    <div class="perm-title">Izinkan VORTEX TOOLS mengakses Shizuku?</div>
+    <div class="perm-desc">Akses ini digunakan untuk menjalankan modul <b>booster</b> & <b>cheat engine</b> agar dapat beroperasi dengan hak akses lebih tinggi. Izin ini berlaku hingga jam 00:00 dan akan diminta kembali setiap hari.</div>
+    <div class="perm-actions">
+      <button class="perm-btn perm-deny" id="btn-deny">Tolak</button>
+      <button class="perm-btn perm-allow" id="btn-allow">Izinkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MINI LOADING OVERLAY ================= -->
+<div id="overlay-mini" class="hidden">
+  <div class="spinner"></div>
+  <div class="mini-text" id="mini-text">MENGHUBUNGKAN...</div>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+<div class="app">
+  <div id="screen-main" class="hidden">
+    <div class="header">
+      <div class="doc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M8 9l4 8 4-8"/></svg></div>
+      <button class="music-btn" id="btn-music"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="music-icon"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></button>
+      <button class="settings-btn" id="btn-theme"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="14.5" r="1.1" fill="currentColor" stroke="none"/></svg></button>
+      <div id="theme-panel" class="hidden">
+        <div class="theme-swatch active" data-theme="neon" style="background:linear-gradient(135deg,#3ee9ff,#39ff9d);" title="Neon"></div>
+        <div class="theme-swatch" data-theme="mono" style="background:linear-gradient(135deg,#ffffff,#333333);" title="Hitam/Putih"></div>
+        <div class="theme-swatch" data-theme="red" style="background:#ff3b5c;" title="Merah"></div>
+        <div class="theme-swatch" data-theme="blue" style="background:#3b82ff;" title="Biru"></div>
+        <div class="theme-swatch" data-theme="yellow" style="background:#ffe14d;" title="Kuning"></div>
+        <div class="theme-swatch" data-theme="green" style="background:#39ff6a;" title="Hijau"></div>
+        <div class="theme-swatch" data-theme="purple" style="background:#b388ff;" title="Ungu"></div>
+        <div class="theme-swatch" data-theme="orange" style="background:#ff9c3b;" title="Oren"></div>
+        <div class="theme-swatch" data-theme="pink" style="background:#ff6ec7;" title="Pink"></div>
+      </div>
+      <div class="brand">VORTEX <span>TOOLS</span></div>
+      <div class="subtitle">SYSTEM OPTIMIZATION ENGINE</div>
+    </div>
+    <hr class="divider" style="margin:0 16px;">
+
+    <div class="update-banner" id="update-banner">
+      <div style="display:flex;align-items:flex-start;gap:8px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 21a2 2 0 004 0"/></svg><div><b>Pembaruan v2.6:</b> Fitur ganti warna tema & izin akses Shizuku ditambahkan.</div></div>
+      <button id="close-banner">✕</button>
+    </div>
+
+    <div class="status-box">
+      <div class="status-pill">ENGINE LOADED <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="status-line">STATUS: ENGINE ACTIVE (ENGINE.SO)</div>
+    </div>
+
+    <div class="section-label label-cyan"><span class="bar bar-cyan"></span><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg> TIPE BOOSTER</div>
+    <div class="feature-list" id="list-booster"></div>
+
+    <div class="section-label label-green"><span class="bar bar-green"></span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg> TIPE CHEAT</div>
+    <div class="feature-list" id="list-cheat"></div>
+
+    <div class="console" id="console-log">
+      <div class="sys">[SYS] Awaiting engine injector module activation...</div>
+    </div>
+
+    <div class="footer-tag">VORTEX TOOLS — apk booster & cheat free fire by HAMZNOTDEV.</div>
+    <audio id="bgm-audio" loop>
+<source src="https://files.catbox.moe/0nuhp2.mp3" type="audio/mpeg"> -->
+    </audio>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+(function(){
+  // ---------------- force video play (some mobile browsers ignore autoplay attr) ----------------
+  function forcePlay(video){
+    if(!video) return;
+    video.muted = true;
+    video.playsInline = true;
+    const tryPlay = ()=>{ video.play().catch(()=>{ setTimeout(tryPlay, 800); }); };
+    tryPlay();
+    video.addEventListener('canplay', tryPlay);
+    video.addEventListener('loadeddata', tryPlay);
+  }
+  forcePlay(document.getElementById('key-bg-video'));
+  forcePlay(document.getElementById('loading-bg-video'));
+
+  // ---------------- matrix bg ----------------
+  const matrix = document.getElementById('matrix');
+  const chars = "01アイウエオカキクケコサシスセソ";
+  for(let i=0;i<14;i++){
+    const col = document.createElement('div');
+    col.className='col';
+    let str='';
+    for(let j=0;j<40;j++){ str += chars[Math.floor(Math.random()*chars.length)] + '\n'; }
+    col.textContent = str;
+    col.style.left = (i*7.2)+'%';
+    col.style.animationDuration = (8+Math.random()*10)+'s';
+    col.style.animationDelay = (Math.random()*-10)+'s';
+    matrix.appendChild(col);
+  }
+
+  const VALID_KEY = 'apkfree';
+  const SHIZUKU_KEY = 'vortex_shizuku_permission';
+  const THEME_KEY = 'vortex_theme';
+
+  const screenKey = document.getElementById('screen-key');
+  const screenLoading = document.getElementById('screen-loading');
+  const screenPermission = document.getElementById('screen-permission');
+  const screenMain = document.getElementById('screen-main');
+  const overlayMini = document.getElementById('overlay-mini');
+  const miniText = document.getElementById('mini-text');
+  const toastWrap = document.getElementById('toast-wrap');
+  const consoleLog = document.getElementById('console-log');
+
+  // ---------------- THEME ----------------
+  const THEMES = {
+    neon:   { bg:'#050810', panel:'#0a1220', panel2:'#0d1a2b', cyan:'#3ee9ff', green:'#39ff9d', greenDim:'#1f8f5c', text:'#cfe9ff', textDim:'#6a86a8', border:'#123049' },
+    mono:   { bg:'#000000', panel:'#0a0a0a', panel2:'#141414', cyan:'#ffffff', green:'#ffffff', greenDim:'#888888', text:'#f5f5f5', textDim:'#9a9a9a', border:'#2c2c2c' },
+    red:    { bg:'#0d0406', panel:'#180a0d', panel2:'#1f0d11', cyan:'#ff3b5c', green:'#ff6b7d', greenDim:'#8a1f2c', text:'#ffd9df', textDim:'#a4707a', border:'#3a1219' },
+    blue:   { bg:'#040a14', panel:'#0a1526', panel2:'#0e1d33', cyan:'#3b82ff', green:'#6ea8ff', greenDim:'#1f4c96', text:'#d6e6ff', textDim:'#6f8fbd', border:'#12274a' },
+    yellow: { bg:'#120f02', panel:'#1e1a07', panel2:'#272109', cyan:'#ffe14d', green:'#fff08a', greenDim:'#8a7a1f', text:'#fff6c9', textDim:'#a69b5e', border:'#3a330f' },
+    green:  { bg:'#03110a', panel:'#081e14', panel2:'#0b2819', cyan:'#39ff6a', green:'#7dffa3', greenDim:'#1f8f4a', text:'#d6ffe4', textDim:'#6fb98a', border:'#123a24' },
+    purple: { bg:'#08051a', panel:'#120b2b', panel2:'#170f36', cyan:'#b388ff', green:'#caa9ff', greenDim:'#5a3f96', text:'#e5daff', textDim:'#8a78ad', border:'#241a4a' },
+    orange: { bg:'#140a02', panel:'#221206', panel2:'#2c1808', cyan:'#ff9c3b', green:'#ffbf7d', greenDim:'#96521f', text:'#ffe3c9', textDim:'#c2946a', border:'#3a2410' },
+    pink:   { bg:'#140611', panel:'#230b1c', panel2:'#2e0f24', cyan:'#ff6ec7', green:'#ff9edb', greenDim:'#96276f', text:'#ffd9f0', textDim:'#c27aab', border:'#3a1230' },
+  };
+  function applyTheme(name){
+    const t = THEMES[name] || THEMES.neon;
+    const r = document.documentElement.style;
+    r.setProperty('--bg', t.bg);
+    r.setProperty('--panel', t.panel);
+    r.setProperty('--panel-2', t.panel2);
+    r.setProperty('--cyan', t.cyan);
+    r.setProperty('--green', t.green);
+    r.setProperty('--green-dim', t.greenDim);
+    r.setProperty('--text', t.text);
+    r.setProperty('--text-dim', t.textDim);
+    r.setProperty('--border', t.border);
+    document.body.setAttribute('data-theme', name);
+    document.querySelectorAll('.theme-swatch').forEach(sw=>{
+      sw.classList.toggle('active', sw.dataset.theme === name);
+    });
+  }
+
+  // ---------------- feature data ----------------
+  const boosterFeatures = [
+    { id:'fps60', name:'FPS LOCK 60', desc:'Mengunci output frame rate stabil di 60 FPS agar gameplay lebih halus dan tidak patah-patah.' },
+    { id:'fps120', name:'FPS LOCK 120', desc:'Mengunci frame rate di 120 FPS untuk respons visual lebih cepat di perangkat yang mendukung.' },
+    { id:'boostergame', name:'BOOSTER GAME', desc:'Mengalokasikan prioritas CPU & RAM khusus ke aplikasi game yang sedang berjalan.' },
+    { id:'nolag', name:'NO LAG', desc:'Membersihkan cache & proses latar belakang secara berkala agar tidak terjadi lag mendadak.' },
+    { id:'lowefek', name:'LOW EFEK', desc:'Menurunkan beban render partikel & efek visual berat agar game terasa lebih ringan.' },
+  ];
+  const cheatFeatures = [
+    { id:'aimlock', name:'AIM LOCK 80%', desc:'Simulasi tampilan bantuan bidik dengan tingkat akurasi 80% (fitur demonstrasi visual).' },
+    { id:'autolock', name:'AUTO LOCK BADAN 80%', desc:'Simulasi penguncian target otomatis ke badan musuh sebesar 80% (tampilan demo).' },
+    { id:'grafikmc', name:'GRAFIK MC', desc:'Mengubah tampilan render grafis menjadi mode ringan bergaya low-poly/pixelated.' },
+  ];
+
+  function renderFeatures(containerId, items){
+    const container = document.getElementById(containerId);
+    items.forEach(item=>{
+      const row = document.createElement('div');
+      row.className = 'feature';
+      row.innerHTML = `
+        <div class="feature-info">
+          <div class="feature-name">${item.name}</div>
+          <div class="feature-desc">${item.desc}</div>
+        </div>
+        <div class="switch" id="sw-${item.id}"><div class="knob"></div></div>
+      `;
+      container.appendChild(row);
+      const sw = row.querySelector('.switch');
+      sw.addEventListener('click', ()=> toggleFeature(sw, item.name));
+    });
+  }
+  renderFeatures('list-booster', boosterFeatures);
+  renderFeatures('list-cheat', cheatFeatures);
+
+  function addLog(text, ok){
+    const line = document.createElement('div');
+    line.className = ok? 'ok':'sys';
+    const time = new Date().toTimeString().slice(0,8);
+    line.textContent = `[${time}] ${text}`;
+    consoleLog.appendChild(line);
+    consoleLog.scrollTop = consoleLog.scrollHeight;
+  }
+
+  function showToast(loadingMsg, doneMsg, duration){
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<div class="mini-spinner"></div><div class="msg">${loadingMsg}</div>`;
+    toastWrap.appendChild(toast);
+    setTimeout(()=>{
+      toast.innerHTML = `<div class="check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="msg">${doneMsg}</div>`;
+      setTimeout(()=>{
+        toast.style.transition='opacity 0.4s';
+        toast.style.opacity='0';
+        setTimeout(()=> toast.remove(), 400);
+      }, 1800);
+    }, duration || 1100);
+  }
+
+  function toggleFeature(sw, name){
+    const turningOn = !sw.classList.contains('on');
+    sw.classList.toggle('on');
+    if(turningOn){
+      showToast(`Memasang ${name}...`, `Sukses terpasang: <b>${name}</b>`, 1200);
+      addLog(`Success injected module: ${name}`, true);
+    } else {
+      showToast(`Menonaktifkan ${name}...`, `${name} dinonaktifkan`, 900);
+      addLog(`Module disabled: ${name}`, false);
+    }
+  }
+
+  // ---------------- KEY SCREEN ----------------
+  const keyInput = document.getElementById('key-input');
+  const keyEyeBtn = document.getElementById('key-eye-btn');
+  const keyError = document.getElementById('key-error');
+  const keySubmit = document.getElementById('key-submit');
+  const keyCard = document.querySelector('.key-card');
+
+  const eyeIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const eyeOffIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0112 19c-7 0-11-7-11-7a21.6 21.6 0 015.06-6.06M9.9 4.24A10.4 10.4 0 0112 4c7 0 11 7 11 7a21.4 21.4 0 01-3.22 4.36"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  keyEyeBtn.innerHTML = eyeIcon;
+  keyEyeBtn.addEventListener('click', ()=>{
+    const showing = keyInput.type === 'text';
+    keyInput.type = showing ? 'password' : 'text';
+    keyEyeBtn.innerHTML = showing ? eyeIcon : eyeOffIcon;
+  });
+
+  function submitKey(){
+    const val = (keyInput.value || '').trim().toLowerCase();
+    if(val === VALID_KEY){
+      keyError.textContent = '';
+      screenKey.classList.add('hidden');
+      const loadVid = document.getElementById('loading-bg-video');
+      if(loadVid){ loadVid.muted = false; loadVid.volume = 0.7; }
+      startLoadingScreen();
+    } else {
+      keyError.textContent = 'Key salah. Silakan coba lagi.';
+      keyCard.classList.remove('shake');
+      void keyCard.offsetWidth;
+      keyCard.classList.add('shake');
+    }
+  }
+  keySubmit.addEventListener('click', submitKey);
+  keyInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') submitKey(); });
+
+  // ---------------- LOADING SCREEN ----------------
+  const asciiPercent = document.getElementById('ascii-percent');
+  const loadingBarFill = document.getElementById('loading-bar-fill');
+  const loadingStatus = document.getElementById('loading-status');
+  const btnContinue = document.getElementById('btn-continue');
+  const btnLoadingMute = document.getElementById('btn-loading-mute');
+  const loadingMuteIcon = document.getElementById('loading-mute-icon');
+  const iconVolOn = '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>';
+  const iconVolOff = '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  btnLoadingMute.addEventListener('click', ()=>{
+    const vid = document.getElementById('loading-bg-video');
+    vid.muted = !vid.muted;
+    loadingMuteIcon.innerHTML = vid.muted ? iconVolOff : iconVolOn;
+  });
+
+  function startLoadingScreen(){
+    screenLoading.classList.remove('hidden');
+    const vid = document.getElementById('loading-bg-video');
+    let done = false;
+
+    function finish(){
+      if(done) return;
+      done = true;
+      asciiPercent.textContent = '100%';
+      loadingBarFill.style.width = '100%';
+      loadingStatus.textContent = 'Silakan pencet tombol di kanan atas';
+      loadingStatus.classList.add('ready');
+      btnContinue.classList.add('show');
+      // lanjutkan video secara ambient di background setelah 1x putaran selesai
+      vid.loop = true;
+      vid.play().catch(()=>{});
+    }
+
+    vid.addEventListener('timeupdate', ()=>{
+      if(done || !vid.duration || isNaN(vid.duration)) return;
+      const pct = Math.min(100, Math.round((vid.currentTime / vid.duration) * 100));
+      asciiPercent.textContent = pct + '%';
+      loadingBarFill.style.width = pct + '%';
+      if(pct >= 100) finish();
+    });
+    vid.addEventListener('ended', finish);
+
+    // fallback: kalau video gagal load / durasi tidak terbaca, tetap selesai dalam 8 detik
+    setTimeout(finish, 8000);
+  }
+
+  btnContinue.addEventListener('click', ()=>{
+    screenLoading.classList.add('hidden');
+    const vid = document.getElementById('loading-bg-video');
+    if(vid){ vid.pause(); vid.muted = true; }
+    checkShizukuPermission();
+  });
+
+  // ---------------- SHIZUKU PERMISSION (per calendar day) ----------------
+  function todayStr(){ return new Date().toDateString(); }
+
+  async function checkShizukuPermission(){
+    let granted = false;
+    try{
+      const result = await window.storage.get(SHIZUKU_KEY, false);
+      if(result && result.value){
+        const data = JSON.parse(result.value);
+        if(data.date === todayStr()) granted = true;
+      }
+    }catch(e){ /* no permission stored yet */ }
+
+    if(granted){
+      goToMain();
+    } else {
+      screenPermission.classList.remove('hidden');
+    }
+  }
+
+  document.getElementById('btn-deny').addEventListener('click', ()=>{
+    showToast('', '⚠️ Tanpa izin, booster & cheat tidak dapat berjalan optimal', 10);
+  });
+
+  document.getElementById('btn-allow').addEventListener('click', async ()=>{
+    screenPermission.classList.add('hidden');
+    overlayMini.classList.remove('hidden');
+    miniText.textContent = 'MENGHUBUNGKAN KE SHIZUKU...';
+    setTimeout(async ()=>{
+      try{
+        await window.storage.set(SHIZUKU_KEY, JSON.stringify({ date: todayStr() }), false);
+      }catch(e){ /* gimmick continues even if storage fails */ }
+      overlayMini.classList.add('hidden');
+      goToMain();
+    }, 1400);
+  });
+
+  function goToMain(){
+    screenMain.classList.remove('hidden');
+    const loadVidStop = document.getElementById('loading-bg-video');
+    if(loadVidStop){ loadVidStop.pause(); loadVidStop.muted = true; }
+    const bgm = document.getElementById('bgm-audio');
+    if(bgm){ bgm.volume = 0.5; bgm.play().catch(()=>{ /* butuh interaksi user jika autoplay diblokir */ }); }
+    addLog('Success injected source binary: engine.so', true);
+    addLog('All booster & cheat modules initialized successfully.', true);
+  }
+
+  // ---------------- MUSIC TOGGLE ----------------
+  const btnMusic = document.getElementById('btn-music');
+  const musicIcon = document.getElementById('music-icon');
+  const iconVolumeOn = '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>';
+  const iconVolumeOff = '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line x1="1" y1="1" x2="23" y2="23" stroke="var(--danger, #ff4d6d)"/>';
+  btnMusic.addEventListener('click', ()=>{
+    const bgm = document.getElementById('bgm-audio');
+    if(!bgm) return;
+    if(bgm.paused){
+      bgm.play().catch(()=>{});
+      musicIcon.innerHTML = iconVolumeOn;
+      btnMusic.style.color = 'var(--cyan)';
+    } else {
+      bgm.pause();
+      musicIcon.innerHTML = iconVolumeOff;
+      btnMusic.style.color = 'var(--text-dim)';
+    }
+  });
+
+  // ---------------- THEME PANEL ----------------
+  const btnTheme = document.getElementById('btn-theme');
+  const themePanel = document.getElementById('theme-panel');
+  btnTheme.addEventListener('click', ()=> themePanel.classList.toggle('hidden'));
+  document.querySelectorAll('.theme-swatch').forEach(sw=>{
+    sw.addEventListener('click', async ()=>{
+      const name = sw.dataset.theme;
+      applyTheme(name);
+      themePanel.classList.add('hidden');
+      try{ await window.storage.set(THEME_KEY, name, false); }catch(e){}
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    if(!themePanel.contains(e.target) && e.target !== btnTheme && !themePanel.classList.contains('hidden')){
+      themePanel.classList.add('hidden');
+    }
+  });
+
+  // ---------------- UPDATE BANNER ----------------
+  document.getElementById('close-banner').addEventListener('click', ()=>{
+    document.getElementById('update-banner').classList.add('hidden');
+  });
+
+  // ---------------- restore saved theme on load ----------------
+  (async ()=>{
+    try{
+      const result = await window.storage.get(THEME_KEY, false);
+      if(result && result.value && THEMES[result.value]) applyTheme(result.value);
+    }catch(e){ /* default theme stays */ }
+  })();
+
+})();
+</script>
+</body>
+</html>
