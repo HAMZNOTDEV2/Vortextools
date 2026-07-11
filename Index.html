@@ -213,7 +213,7 @@
   <div class="key-overlay-dark"></div>
   <div class="key-card">
     <div class="key-logo-slot" id="key-logo-slot">
-      <img id="key-logo-img" src="" alt="Logo" onload="this.style.display='block'; document.getElementById('key-logo-fallback').style.display='none';">
+      <img id="key-logo-img" src="https://files.catbox.moe/uach2y.png" alt="Logo" onload="this.style.display='block'; document.getElementById('key-logo-fallback').style.display='none';">
       <div id="key-logo-fallback" style="color:#3ee9ff;"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M8 9l4 8 4-8"/></svg></div>
     </div>
     <div class="key-logo">VORTEX <span>TOOLS</span></div>
@@ -295,7 +295,7 @@
     <hr class="divider" style="margin:0 16px;">
 
     <div class="update-banner" id="update-banner">
-      <div style="display:flex;align-items:flex-start;gap:8px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 21a2 2 0 004 0"/></svg><div><b>Pembaruan v2.6:</b> Fitur ganti warna tema & izin akses Shizuku ditambahkan.</div></div>
+      <div style="display:flex;align-items:flex-start;gap:8px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 21a2 2 0 004 0"/></svg><div><b>Pembaruan v2.6:</b> Fitur ganti warna tema & penambahan fitur booster.</div></div>
       <button id="close-banner">✕</button>
     </div>
 
@@ -314,9 +314,9 @@
       <div class="sys">[SYS] Awaiting engine injector module activation...</div>
     </div>
 
-    <div class="footer-tag">VORTEX TOOLS — apk booster & cheat free fire by HAMZNOTDEV.</div>
+    <div class="footer-tag">VORTEX TOOLS — penambahan fitur booster & fix bug</div>
     <audio id="bgm-audio" loop>
-<source src="https://files.catbox.moe/0nuhp2.mp3" type="audio/mpeg"> -->
+<source src="https://files.catbox.moe/0nuhp2.mp3" type="audio/mpeg">
     </audio>
   </div>
 </div>
@@ -353,7 +353,7 @@
     matrix.appendChild(col);
   }
 
-  const VALID_KEY = 'apkfree';
+  const VALID_KEY = 'vortexapkfree';
   const SHIZUKU_KEY = 'vortex_shizuku_permission';
   const THEME_KEY = 'vortex_theme';
 
@@ -405,8 +405,8 @@
     { id:'lowefek', name:'LOW EFEK', desc:'Menurunkan beban render partikel & efek visual berat agar game terasa lebih ringan.' },
   ];
   const cheatFeatures = [
-    { id:'aimlock', name:'AIM LOCK 80%', desc:'Simulasi tampilan bantuan bidik dengan tingkat akurasi 80% (fitur demonstrasi visual).' },
-    { id:'autolock', name:'AUTO LOCK BADAN 80%', desc:'Simulasi penguncian target otomatis ke badan musuh sebesar 80% (tampilan demo).' },
+    { id:'aimlock', name:'AIM LOCK 80%', desc:'Simulasi tampilan bantuan bidik dengan tingkat akurasi 80%.' },
+    { id:'autolock', name:'AUTO LOCK BADAN 80%', desc:'Simulasi penguncian target otomatis ke badan musuh sebesar 80%.' },
     { id:'grafikmc', name:'GRAFIK MC', desc:'Mengubah tampilan render grafis menjadi mode ringan bergaya low-poly/pixelated.' },
   ];
 
